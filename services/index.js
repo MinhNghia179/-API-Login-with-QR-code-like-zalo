@@ -3,7 +3,9 @@ const socketIo = require('socket.io');
 
 module.exports = function (app) {
   const server = http.createServer(app);
+
   const io = socketIo(server);
+
   io.on('connection', (socket) => {
     console.log('New client connected');
 
