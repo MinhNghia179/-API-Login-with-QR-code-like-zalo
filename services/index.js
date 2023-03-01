@@ -1,18 +1,11 @@
-const http = require('http');
-const socketIo = require('socket.io');
+const app = require('express')();
 
-module.exports = function (app) {
-  const server = http.createServer(app);
+const server = require('http').createServer(app);
 
-  const io = socketIo(server);
+const io = require('socket.io')(server);
 
-  io.on('connection', (socket) => {
-    console.log('New client connected');
+io.on('connection', () => {
+  console.log('Connect to socket.io');
+});
 
-    socket.on('disconnect', () => {
-      console.log('Client disconnected');
-    });
-  });
-
-  return io;
-};
+module.exports = io;
