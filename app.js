@@ -24,12 +24,9 @@ app.use(cors());
 app.use('/', indexRouter);
 
 app.use(function (req, res, next) {
-  res.setTimeout(constants.REQUEST_TIME_EXPIRED, () => {
-    res.status(408).json({
-      error: true,
-      error_message: 'Mã qr hết hạn, vui lòng tạo mới.',
-      data: null,
-    });
+  res.setTimeout(30000, function () {
+    console.log('Mã qr hết hạn, vui lòng tạo mới.');
+    res.status(408).send();
   });
   next();
 });

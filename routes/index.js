@@ -4,8 +4,10 @@ const jwt = require('jsonwebtoken');
 const qrCode = require('qrcode');
 
 const io = require('../services/index');
+
 const constants = require('../constants/index');
-const { uuid } = require('uuidv4');
+
+const { v4: uuid } = require('uuid');
 
 router.get('/account/authen', (req, res, next) => {
   const { t } = req.query;
@@ -13,35 +15,38 @@ router.get('/account/authen', (req, res, next) => {
   const time = new Date().getTime();
   const code = `${time}.${uuid().replace(/-/g, '')}`;
 
+  const secret = constants.SECRET_KEY;
+  const options = { expiresIn: constants.TIME_EXPIRED };
+  const token = jwt.sign({ code }, secret, options);
+
   if (t === constants.RESEND_TOKEN) {
     return qrCode.toBuffer(code, (err, buffer) => {
       if (err) return;
       const base64Image = 'data:image/jpg;base64,' + buffer.toString('base64');
-      res.status(200).json({ code, image: base64Image });
+      res.send({ code, image: base64Image, token });
     });
   }
 
   if (t === constants.CONFIRM_INFO) {
-    io.on(`confirm-info-${req.body.code}`, ({ avatar, name, token }) => {
+    const { code } = req.body;
+
+    io.on(`confirm-info-${code}`, ({ avatar, display_name, token }) => {
       if (token) {
-        const expirationTime = jwt.verify(token, constants.SECRET_KEY).exp;
-        const isExpired = Date.now() >= expirationTime * 1000;
-        if (isExpired) {
-          res
-            .status(401)
-            .json({ error: true, message: 'Unauthorized access.', err });
-        } else {
-          res.status(200).json({ avatar, name });
-        }
+        jwt.verify(token, constants.SECRET_KEY, (error) => {
+          if (error) {
+            res.send({ isExpired: true, message: 'Token time expired' });
+            next();
+          }
+          res.send({ isExpired: false, avatar, display_name });
+        });
       }
     });
   }
 
   if (t === constants.SUBMIT_LOGIN) {
-    io.on(`submit-login`, ({ isTrust }) => {
-      if (isTrust) {
-        res.status(200).json({ message: 'Login successfully!' });
-      }
+    const { code } = req.body;
+    io.on(`submit-login-${code}`, ({ token }) => {
+      res.send({ token });
     });
   }
 });
@@ -49,18 +54,14 @@ router.get('/account/authen', (req, res, next) => {
 router.post('/mobile/authen', (req, res, next) => {
   const { t } = req.query;
 
-  // const secret = constants.SECRET_KEY;
-  // const options = { expiresIn: constants.TIME_EXPIRED };
-  // const token = jwt.sign({}, secret, options);
-
   if (t === constants.CONFIRM_INFO) {
-    const { display_name, avatar } = req.body;
-    io.emit(`confirm-info-${code}`, { display_name, avatar });
+    const { display_name, avatar, code, token } = req.body;
+    io.emit(`confirm-info-${code}`, { display_name, avatar, token });
   }
 
   if (t === constants.SUBMIT_LOGIN) {
-    const { token } = req.body;
-    io.emit('submit-login', { isTrust: true, token });
+    const { token, code } = req.body;
+    io.emit(`submit-login-${code}`, { token });
   }
 });
 
