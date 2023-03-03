@@ -9,7 +9,7 @@ const constants = require('../constants/index');
 
 const { v4: uuid } = require('uuid');
 
-router.get('/account/authen', (req, res, next) => {
+router.post('/account/authen', (req, res, next) => {
   const { t } = req.query;
 
   const time = new Date().getTime();
