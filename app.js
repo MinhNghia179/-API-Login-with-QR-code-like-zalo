@@ -4,11 +4,10 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const app = express();
-
 const indexRouter = require('./routes/index');
+const constants = require('./constants/index');
 
 const cors = require('cors');
-const constants = require('./constants/index');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -45,6 +44,10 @@ app.use(function (err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+app.listen(constants.PORT_SERVER, () => {
+  console.log(`Server is listening on port ${constants.PORT_SERVER}`);
 });
 
 module.exports = app;
