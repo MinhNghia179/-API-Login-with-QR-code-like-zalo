@@ -17,10 +17,10 @@ router.post('/account/authen', (req, res, next) => {
 
   const secret = constants.SECRET_KEY;
   const options = { expiresIn: constants.TIME_EXPIRED };
-  const token = jwt.sign({ code }, secret, options);
+  const token = jwt.sign({}, secret, options);
 
   if (t === constants.RESEND_TOKEN) {
-    return qrCode.toBuffer(code, (err, buffer) => {
+    return qrCode.toBuffer({ code, token }, (err, buffer) => {
       if (err) return;
       const base64Image = 'data:image/jpg;base64,' + buffer.toString('base64');
       res.send({ code, image: base64Image, token });
@@ -30,7 +30,7 @@ router.post('/account/authen', (req, res, next) => {
   if (t === constants.CONFIRM_INFO) {
     const { code } = req.body;
 
-    io.on(`confirm-info-${code}`, ({ avatar, display_name, token }) => {
+    io.on(`confirm-info-${code}`, ({ avatar, display_name }) => {
       if (token) {
         jwt.verify(token, constants.SECRET_KEY, (error) => {
           if (error) {
